@@ -124,7 +124,7 @@ return `<h1>রিপোর্ট</h1>${st('দোকানের মোট প�
 <div style="overflow-x:auto"><table style="min-width:360px"><tr><th>তারিখ</th><th>কাস্টমার</th><th>বাকি</th><th>জমা</th></tr>${a.slice(0,200).map(x=>`<tr><td>${fd(x.date)}</td><td>${esc(cname(x.cid))}</td><td class="r">${x.type=='b'?money(x.amt):''}</td><td class="g">${x.type=='j'?money(x.amt):''}</td></tr>`).join('')||'<tr><td colspan="4">কোনো লেনদেন নেই</td></tr>'}</table></div></div>
 <div class="card"><b>মাসিক সারাংশ</b><table style="min-width:0"><tr><th>মাস</th><th>বাকি</th><th>জমা</th></tr>${Object.keys(M).sort().reverse().map(k=>`<tr><td>${bn(k.slice(5)+'-'+k.slice(0,4))}</td><td class="r">${money(M[k][0])}</td><td class="g">${money(M[k][1])}</td></tr>`).join('')}</table></div>
 <div class="card"><b>যাদের কাছে পাওনা (বেশি থেকে কম)</b><table style="min-width:0">${ow.map(c=>`<tr onclick="go('led','${c.id}')"><td>${esc(c.n)}</td><td class="r"><b>${money(B[c.id])}</b></td></tr>`).join('')||'<tr><td>কারো কাছে পাওনা নেই</td></tr>'}</table></div>`}
-function Set(){return `<h1>ব্যাকআপ ও নিরাপত্তা</h1><div class="card"><p>ডেটা এই ফোনেই সেভ থাকে, ইন্টারনেট লাগে না। নিয়মিত ব্যাকআপ নিন।</p>
+function SetP(){return `<h1>ব্যাকআপ ও নিরাপত্তা</h1><div class="card"><p>ডেটা এই ফোনেই সেভ থাকে, ইন্টারনেট লাগে না। নিয়মিত ব্যাকআপ নিন।</p>
 <button class="btn" onclick="out('baki-khata-backup-'+today()+'.json',JSON.stringify({v:2,c:S.c,t:S.t,s:SH?[SH]:[]}),'application/json')">ব্যাকআপ তৈরি করুন (JSON)</button>
 <button class="btn gray" onclick="csv()">লেনদেন CSV তৈরি করুন</button>
 <textarea id="bk" class="in" placeholder="ব্যাকআপের লেখা এখানে আসবে। ডাউনলোড না হলে 'কপি করুন' চাপুন ও কোথাও সেভ রাখুন। রিস্টোরের সময় এখানে পেস্ট করুন।"></textarea>
@@ -161,7 +161,7 @@ try{await tr(['c','t'],x=>{x.objectStore('c').clear();x.objectStore('t').clear()
 async function clearAll(){if(!await ask('⚠ সব কাস্টমার ও লেনদেন মুছে যাবে। আগে ব্যাকআপ নিয়েছেন?','হ্যাঁ, এগোই',1))return;if(!await ask('শেষবার জিজ্ঞাসা: সত্যিই সব মুছবেন? এটি আর ফেরানো যাবে না।','সব মুছুন',1))return;
 try{await tr(['c','t'],x=>{x.objectStore('c').clear();x.objectStore('t').clear()});S.c=[];S.t=[];toast('সব মুছে গেছে');go('home')}catch(e){err('মোছা যায়নি')}}
 /* ---------- render ---------- */
-const NAV=[['home','🏠','হোম'],['cust','👥','কাস্টমার'],['tx','✍️','নতুন হিসাব'],['rep','📊','রিপোর্ট'],['set','⚙️','সেটিংস ও ব্যাকআপ']],SC={home:Home,cust:Cust,led:Led,cf:CF,tx:TXF,rep:Rep,set:Set};
+const NAV=[['home','🏠','হোম'],['cust','👥','কাস্টমার'],['tx','✍️','নতুন হিসাব'],['rep','📊','রিপোর্ট'],['set','⚙️','সেটিংস ও ব্যাকআপ']],SC={home:Home,cust:Cust,led:Led,cf:CF,tx:TXF,rep:Rep,set:SetP};
 function render(){$('#app').innerHTML=(SC[V.t]||Home)();const k={led:'cust',cf:'cust'}[V.t]||V.t;
 $('#nav').innerHTML=NAV.map(n=>`<button class="${n[0]==k?'on':''}" onclick="go('${n[0]}')"><span>${n[1]}</span>${n[2]}</button>`).join('')}
 </script>
@@ -177,25 +177,25 @@ function open(){return new Promise((r,j)=>{const q=indexedDB.open('bakikhata',2)
 const get=(st,id)=>new Promise((r,j)=>{const q=db.transaction(st).objectStore(st).get(id);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
 const mk=(k,id,u)=>({key:k+':'+id,u});
 async function pq(){const q=await all('q');PQ=q.length;PS=new Set(q.map(e=>e.key));paint()}
-async function loadLocal(){S.c=(await all('c')).filter(x=>!x.d);S.t=(await all('t')).filter(x=>!x.d);SH=(await all('s')).find(x=>x.id=='shop'&&!x.d)||null}
+async function loadLocal(){S.c=(await all('c')).filter(x=>!x.dl);S.t=(await all('t')).filter(x=>!x.dl);SH=(await all('s')).find(x=>x.id=='shop'&&!x.dl)||null}
 const kick=()=>{clearTimeout(kick.h);kick.h=setTimeout(sync,400)};
 /* লোকাল সেভ: প্রতিটি পরিবর্তনে সময় (u) বসে ও সিঙ্ক লাইনে (q) যায়; মোছা মানে "টম্বস্টোন" */
 async function dbC(o){o.u=Date.now();await tr(['c','q'],t=>{t.objectStore('c').put(o);t.objectStore('q').put(mk('c',o.id,o.u))});up(S.c,o);await pq();kick()}
 async function dbT(o){o.u=Date.now();await tr(['t','q'],t=>{t.objectStore('t').put(o);t.objectStore('q').put(mk('t',o.id,o.u))});up(S.t,o);await pq();kick()}
-async function delT_(id){const u=Date.now();await tr(['t','q'],t=>{t.objectStore('t').put({id,d:1,u});t.objectStore('q').put(mk('t',id,u))});S.t=S.t.filter(x=>x.id!=id);await pq();kick()}
-async function delC_(id){const u=Date.now(),ts=S.t.filter(x=>x.cid==id);await tr(['c','t','q'],t=>{t.objectStore('c').put({id,d:1,u});t.objectStore('q').put(mk('c',id,u));ts.forEach(x=>{t.objectStore('t').put({id:x.id,d:1,u});t.objectStore('q').put(mk('t',x.id,u))})});S.c=S.c.filter(x=>x.id!=id);S.t=S.t.filter(x=>x.cid!=id);await pq();kick()}
+async function delT_(id){const u=Date.now();await tr(['t','q'],t=>{t.objectStore('t').put({id,dl:1,u});t.objectStore('q').put(mk('t',id,u))});S.t=S.t.filter(x=>x.id!=id);await pq();kick()}
+async function delC_(id){const u=Date.now(),ts=S.t.filter(x=>x.cid==id);await tr(['c','t','q'],t=>{t.objectStore('c').put({id,dl:1,u});t.objectStore('q').put(mk('c',id,u));ts.forEach(x=>{t.objectStore('t').put({id:x.id,dl:1,u});t.objectStore('q').put(mk('t',x.id,u))})});S.c=S.c.filter(x=>x.id!=id);S.t=S.t.filter(x=>x.cid!=id);await pq();kick()}
 async function saveShop(){const o={id:'shop',n:$('#sn').value.trim(),u:Date.now()};await tr(['s','q'],t=>{t.objectStore('s').put(o);t.objectStore('q').put(mk('s','shop',o.u))});SH=o;await pq();kick();toast('সেভ হয়েছে ✔')}
 /* ===== সিঙ্ক ===== */
 async function push(){const q=await all('q');
 for(let i=0;i<q.length;i+=100){const ch=q.slice(i,i+100),rows=[],gone=[];
-for(const e of ch){const p=e.key.indexOf(':'),k=e.key.slice(0,p),id=e.key.slice(p+1),r=await get(k,id);r?rows.push({kind:k,id,data:r,u:r.u,deleted:!!r.d}):gone.push(e.key)}
+for(const e of ch){const p=e.key.indexOf(':'),k=e.key.slice(0,p),id=e.key.slice(p+1),r=await get(k,id);r?rows.push({kind:k,id,data:r,u:r.u,deleted:!!r.dl}):gone.push(e.key)}
 if(rows.length){const{error}=await SB.rpc('push_records',{rows});if(error)throw error}
 const cur=new Map((await all('q')).map(e=>[e.key,e.u]));
 await tr('q',t=>ch.forEach(e=>(gone.includes(e.key)||cur.get(e.key)==e.u)&&t.objectStore('q').delete(e.key)))}}
 async function pull(){let since=localStorage.getItem('bk_pull')||'1970-01-01T00:00:00Z',mx='',ch=0;
 for(let f=0;;f+=1000){const{data,error}=await SB.from('records').select('kind,id,data,deleted,u,updated_at').gte('updated_at',since).order('updated_at').order('kind').order('id').range(f,f+999);if(error)throw error;
 const w=[];for(const r of data){if(r.updated_at>mx)mx=r.updated_at;const l=await get(r.kind,r.id);if(!l||(l.u||0)<r.u)w.push(r)}
-if(w.length){await tr(['c','t','s','q'],t=>w.forEach(r=>{t.objectStore(r.kind).put(r.deleted?{id:r.id,d:1,u:r.u}:{...r.data,id:r.id,u:r.u});t.objectStore('q').delete(r.kind+':'+r.id)}));ch+=w.length}
+if(w.length){await tr(['c','t','s','q'],t=>w.forEach(r=>{t.objectStore(r.kind).put(r.deleted?{id:r.id,dl:1,u:r.u}:{...r.data,id:r.id,u:r.u});t.objectStore('q').delete(r.kind+':'+r.id)}));ch+=w.length}
 if(data.length<1000)break}
 if(mx)localStorage.setItem('bk_pull',new Date(Date.parse(mx)-120000).toISOString());
 if(ch){await loadLocal();if(['home','cust','led','rep'].includes(V.t))render()}}
@@ -230,14 +230,14 @@ return `<div class="card"><b>☁️ ক্লাউড সিঙ্ক</b><p>অ
 <button class="btn" onclick="sync()">এখনই সিঙ্ক করুন</button><label>দোকানের নাম</label><input id="sn" class="in" value="${esc(SH&&SH.n)}"><button class="btn gray" onclick="saveShop()">নাম সেভ করুন</button>
 <button class="btn gray" onclick="logout()">লগআউট</button><button class="btn red" onclick="delAcc()">অ্যাকাউন্ট মুছুন</button><small>অ্যাকাউন্ট মুছলে ক্লাউডের সব তথ্য চিরতরে মুছে যায়।</small></div>`}
 function saveCfg(){const u=$('#cu').value.trim().replace(/\/+$/,''),k=$('#ck').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(u))return err('Project URL ঠিক নয় (যেমন https://abcd.supabase.co)');if(k.length<30||/\s/.test(k))return err('anon key ঠিক নয়');localStorage.setItem('sb_url',u);localStorage.setItem('sb_key',k);location.reload()}
-function Set2(){const s=Set(),i=s.indexOf('</h1>')+5;return s.slice(0,i)+cloudCard()+s.slice(i)}
+function Set2(){const s=SetP(),i=s.indexOf('</h1>')+5;return s.slice(0,i)+cloudCard()+s.slice(i)}
 async function restore(){let o;try{o=JSON.parse($('#bk').value.trim())}catch(e){return err('ব্যাকআপের লেখা ঠিক নয়')}
 if(!o||!Array.isArray(o.c)||!Array.isArray(o.t)||o.c.some(x=>!x.id||!x.n)||o.t.some(x=>!x.id||!x.cid||!(x.amt>0)||!x.date||!/^[bj]$/.test(x.type)))return err('এটি সঠিক ব্যাকআপ ফাইল নয়');
 if(!await ask('ব্যাকআপের '+bn(o.c.length)+' কাস্টমার ও '+bn(o.t.length)+' লেনদেন এখনকার তথ্যের সাথে <b>মেলানো</b> হবে। একই রেকর্ড দ্বিতীয়বার যোগ হবে না; দুই জায়গায় থাকলে নতুনটি থাকবে। কিছু মুছবে না। এগোবেন?','হ্যাঁ, মেলান'))return;
 const w=[];for(const[k,a]of[['c',o.c],['t',o.t],['s',o.s||[]]])for(const x of a){const l=await get(k,x.id),u=x.u||x.ts||1;if(l&&(l.u||0)>=u)continue;x.u=u;w.push([k,x])}
 try{if(w.length)await tr(['c','t','s','q'],t=>w.forEach(([k,x])=>{t.objectStore(k).put(x);t.objectStore('q').put(mk(k,x.id,x.u))}));await loadLocal();await pq();kick();toast(bn(w.length)+'টি নতুন/নতুনতর রেকর্ড যুক্ত হয়েছে ✔');go('home')}catch(e){err('রিস্টোর করা যায়নি, আগের তথ্য ঠিক আছে')}}
 async function clearAll(){if(!await ask('⚠ সব কাস্টমার ও লেনদেন মুছবেন? ক্লাউড ও অন্য ফোন থেকেও মুছে যাবে।','হ্যাঁ, এগোই',1))return;if(!await ask('শেষবার জিজ্ঞাসা: সত্যিই সব মুছবেন?','সব মুছুন',1))return;
-const u=Date.now(),c=[...S.c],t=[...S.t];try{await tr(['c','t','q'],x=>{c.forEach(i=>{x.objectStore('c').put({id:i.id,d:1,u});x.objectStore('q').put(mk('c',i.id,u))});t.forEach(i=>{x.objectStore('t').put({id:i.id,d:1,u});x.objectStore('q').put(mk('t',i.id,u))})});S.c=[];S.t=[];await pq();kick();toast('সব মুছে গেছে');go('home')}catch(e){err('মোছা যায়নি')}}
+const u=Date.now(),c=[...S.c],t=[...S.t];try{await tr(['c','t','q'],x=>{c.forEach(i=>{x.objectStore('c').put({id:i.id,dl:1,u});x.objectStore('q').put(mk('c',i.id,u))});t.forEach(i=>{x.objectStore('t').put({id:i.id,dl:1,u});x.objectStore('q').put(mk('t',i.id,u))})});S.c=[];S.t=[];await pq();kick();toast('সব মুছে গেছে');go('home')}catch(e){err('মোছা যায়নি')}}
 function render(){$('#app').innerHTML=(SC[V.t]||Home)();const k={led:'cust',cf:'cust'}[V.t]||V.t,a=V.t=='auth'||V.t=='rec';
 $('#nav').style.display=a?'none':'flex';$('#nav').innerHTML=NAV.map(n=>`<button class="${n[0]==k?'on':''}" onclick="go('${n[0]}')"><span>${n[1]}</span>${n[2]}</button>`).join('');paint()}
 NAV[4][2]='ব্যাকআপ ও নিরাপত্তা';SC.set=Set2;SC.auth=Auth;SC.rec=Rec;
