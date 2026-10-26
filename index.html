@@ -177,7 +177,7 @@ function open(){return new Promise((r,j)=>{const q=indexedDB.open('bakikhata',2)
 const get=(st,id)=>new Promise((r,j)=>{const q=db.transaction(st).objectStore(st).get(id);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
 const mk=(k,id,u)=>({key:k+':'+id,u});
 async function pq(){const q=await all('q');PQ=q.length;PS=new Set(q.map(e=>e.key));paint()}
-async function loadLocal(){S.c=(await all('c')).filter(x=>!x.dl);S.t=(await all('t')).filter(x=>!x.dl);SH=(await all('s')).find(x=>x.id=='shop'&&!x.dl)||null}
+async function loadLocal(){S.c=(await all('c')).filter(x=>!x.dl&&x.n);S.t=(await all('t')).filter(x=>!x.dl&&x.cid&&x.amt>0);SH=(await all('s')).find(x=>x.id=='shop'&&!x.dl)||null}
 const kick=()=>{clearTimeout(kick.h);kick.h=setTimeout(sync,400)};
 /* লোকাল সেভ: প্রতিটি পরিবর্তনে সময় (u) বসে ও সিঙ্ক লাইনে (q) যায়; মোছা মানে "টম্বস্টোন" */
 async function dbC(o){o.u=Date.now();await tr(['c','q'],t=>{t.objectStore('c').put(o);t.objectStore('q').put(mk('c',o.id,o.u))});up(S.c,o);await pq();kick()}
@@ -238,11 +238,12 @@ const w=[];for(const[k,a]of[['c',o.c],['t',o.t],['s',o.s||[]]])for(const x of a)
 try{if(w.length)await tr(['c','t','s','q'],t=>w.forEach(([k,x])=>{t.objectStore(k).put(x);t.objectStore('q').put(mk(k,x.id,x.u))}));await loadLocal();await pq();kick();toast(bn(w.length)+'টি নতুন/নতুনতর রেকর্ড যুক্ত হয়েছে ✔');go('home')}catch(e){err('রিস্টোর করা যায়নি, আগের তথ্য ঠিক আছে')}}
 async function clearAll(){if(!await ask('⚠ সব কাস্টমার ও লেনদেন মুছবেন? ক্লাউড ও অন্য ফোন থেকেও মুছে যাবে।','হ্যাঁ, এগোই',1))return;if(!await ask('শেষবার জিজ্ঞাসা: সত্যিই সব মুছবেন?','সব মুছুন',1))return;
 const u=Date.now(),c=[...S.c],t=[...S.t];try{await tr(['c','t','q'],x=>{c.forEach(i=>{x.objectStore('c').put({id:i.id,dl:1,u});x.objectStore('q').put(mk('c',i.id,u))});t.forEach(i=>{x.objectStore('t').put({id:i.id,dl:1,u});x.objectStore('q').put(mk('t',i.id,u))})});S.c=[];S.t=[];await pq();kick();toast('সব মুছে গেছে');go('home')}catch(e){err('মোছা যায়নি')}}
-function render(){$('#app').innerHTML=(SC[V.t]||Home)();const k={led:'cust',cf:'cust'}[V.t]||V.t,a=V.t=='auth'||V.t=='rec';
+function render(){let h;try{h=(SC[V.t]||Home)()}catch(e){console.error(e);h='<div class="card"><b>⚠ পাতা খুলতে সমস্যা হয়েছে</b><br><small>'+esc(e.message)+'</small><button class="btn" onclick="go(\'home\')">হোমে যান</button></div>'}$('#app').innerHTML=h;const k={led:'cust',cf:'cust'}[V.t]||V.t,a=V.t=='auth'||V.t=='rec';
 $('#nav').style.display=a?'none':'flex';$('#nav').innerHTML=NAV.map(n=>`<button class="${n[0]==k?'on':''}" onclick="go('${n[0]}')"><span>${n[1]}</span>${n[2]}</button>`).join('');paint()}
 NAV[4][2]='ব্যাকআপ ও নিরাপত্তা';SC.set=Set2;SC.auth=Auth;SC.rec=Rec;
 addEventListener('online',()=>SB?sync():location.reload());addEventListener('offline',()=>setSt('off'));
 document.addEventListener('visibilitychange',()=>document.visibilityState=='visible'&&sync());setInterval(()=>document.visibilityState=='visible'&&sync(),30000);
+addEventListener('unhandledrejection',ev=>{console.error(ev.reason);if(!$('#app').innerHTML)$('#app').innerHTML='<div class="card"><b>⚠ অ্যাপ চালু হতে সমস্যা:</b><br>'+esc((ev.reason&&ev.reason.message)||ev.reason)+'</div>'});
 (async()=>{try{await open()}catch(e){$('#app').innerHTML='<div class="card"><b>⚠ এই ব্রাউজারে ডেটা সেভ করা যাচ্ছে না।</b><br>Chrome ব্রাউজারে (প্রাইভেট ছাড়া) খুলুন।</div>';return}
 if(!CFG){await loadLocal();V.t='set';render();setSt('none');return}
 if(!window.supabase){const o=localStorage.getItem('bk_owner');if(o){await loadLocal();await pq();render();setSt('off')}else{V.t='auth';render();err('প্রথমবার ইন্টারনেট লাগবে')}return}
